@@ -35,7 +35,7 @@ public class WordCountGrouping {
 			}
 		});
 		
-		JavaPairRDD<String, Integer> counts  = pairs.groupByKey(numParts).mapToPair(new PairFunction<Tuple2<String,Iterable<Integer>>, String, Integer>() {
+		JavaPairRDD<String, Integer> counts  = pairs.repartition(numParts).groupByKey().mapToPair(new PairFunction<Tuple2<String,Iterable<Integer>>, String, Integer>() {
 			@Override
 			public Tuple2<String, Integer> call(Tuple2<String, Iterable<Integer>> group) throws Exception {
 				int count = 0;
