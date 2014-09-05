@@ -1,6 +1,10 @@
 #!/bin/bash
 
 # This is a simple bash file containing configuration values as variables
+if [ "$DEFAULTS_READ" = "true" ] ; then
+	echo "defaults already read. exiting"
+	exit 0
+fi
 
 # the repo must be called flink
 GIT_REPO=https://github.com/apache/incubator-flink.git
@@ -105,4 +109,5 @@ if [[ `basename $BASH_SOURCE` == "configDefaults.sh" ]] ; then
 		. ./config.sh
 	fi
 fi
-
+# see first statement
+DEFAULTS_READ="true"

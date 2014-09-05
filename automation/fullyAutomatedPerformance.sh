@@ -18,11 +18,16 @@ if [[ ! -e "_config-staging" ]]; then
 	mkdir "_config-staging";
 fi
 
-export LOG_dir="fullbench-"`date +"%d-%m-%y-%H:%M"`
-mkdir -p "benchmarks/$LOG"
-LOG=$LOG_dir"/control"
-export TIMES=$LOG_dir"/times"
+export LOG_dir="fullbench-"`date +"%d-%m-%y-%H-%M"`
+mkdir -p "benchmarks/${LOG_dir}"
+LOG="benchmarks/$LOG_dir/control"
+export TIMES="benchmarks/${LOG_dir}/times"
+touch $TIMES
 
+# set output for this file (http://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself)
+exec > >(tee $LOG)
+# also for stdout
+exec 2>&1
 
 
 echo "machines;memory;" >> $TIMES
@@ -114,7 +119,6 @@ runExperiments() {
 	mkdir -p $experimentsSparkLog
 	cp $SPARK_HOME/logs/* $experimentsSparkLog
 
-
 	# write newline in timing
 	echo "" >> $TIMES
 }
@@ -139,3 +143,7 @@ runExperiments 5 15000
 
 runExperiments 25 5000
 
+
+echo "Experiments done "
+
+tar czf "benchmarks/$LOG_dir.tgz" benchmarks/$LOG_dir
