@@ -1,10 +1,14 @@
 #!/bin/bash
 
+#export all these variables
+set -a
+
 # This is a simple bash file containing configuration values as variables
 if [ "$DEFAULTS_READ" = "true" ] ; then
 	echo "defaults already read. exiting"
-	exit 0
+	return 0
 fi
+
 
 # the repo must be called flink
 GIT_REPO=https://github.com/apache/incubator-flink.git
@@ -110,4 +114,4 @@ if [[ `basename $BASH_SOURCE` == "configDefaults.sh" ]] ; then
 	fi
 fi
 # see first statement
-DEFAULTS_READ="true"
+export DEFAULTS_READ="true"

@@ -8,9 +8,13 @@ echo "Running fully fledged automated benchmarks"
 
 . ./configDefaults.sh
 
+#export all these variables
+set -a
+
 export CORES_PER_MACHINE=16
 # for adding new experiments, you also have to edit the loop in runExperiments()
-FLINK_EXPERIMENTS="flink-wordcount-wo-combine flink-wordcount"
+#FLINK_EXPERIMENTS="flink-wordcount-wo-combine flink-wordcount"
+FLINK_EXPERIMENTS=""
 SPARK_EXPERIMENTS="spark-wordcount-wo-combine spark-wordcount"
 
 # Preparation
@@ -18,10 +22,11 @@ if [[ ! -e "_config-staging" ]]; then
 	mkdir "_config-staging";
 fi
 
-export LOG_dir="fullbench-"`date +"%d-%m-%y-%H-%M"`
-mkdir -p "benchmarks/${LOG_dir}"
-LOG="benchmarks/$LOG_dir/control"
-export TIMES="benchmarks/${LOG_dir}/times"
+benchId="fullbench-"`date +"%d-%m-%y-%H-%M"`
+export LOG_dir="benchmarks/"$benchId
+mkdir -p "${LOG_dir}"
+LOG="$LOG_dir/control"
+export TIMES="${LOG_dir}/times"
 touch $TIMES
 
 # set output for this file (http://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself)
@@ -30,11 +35,16 @@ exec > >(tee $LOG)
 exec 2>&1
 
 
-echo "machines;memory;" >> $TIMES
+echo -n "machines;memory;" >> $TIMES
 # write experiments to headers
-for EXP in "$FLINK_EXPERIMENTS $SPARK_EXPERIMENTS" ; do
-	echo -n "$EXP" >> $TIMES
+MERGED="$FLINK_EXPERIMENTS $SPARK_EXPERIMENTS"
+for EXP in ${MERGED// / } ; do
+	echo -n "$EXP;" >> $TIMES
+	echo "EXP=$EXP"
 done
+# write newline
+echo "" >> $TIMES
+
 
 # arguments
 # 1. Number of machines
@@ -43,7 +53,7 @@ runExperiments() {
 	MACHINES=$1
 	MEMORY=$2
 	echo "Generate configuration for $MACHINES machines and $MEMORY MB of memory"
-	export DOP=`bc $MACHINES*$CORES_PER_MACHINE`
+	export DOP=`echo $MACHINES*$CORES_PER_MACHINE | bc`
 	echo "Set DOP=$DOP"
 	head -n $MACHINES flink-conf/slaves > _config-staging/slaves
 	cp _config-staging/slaves $FILES_DIRECTORY/flink-build/conf/
@@ -57,7 +67,7 @@ runExperiments() {
 
 	# Spark config
 	cat spark-conf/spark-defaults.conf > _config-staging/spark-defaults.conf
-	echo "spark.executor.memory            " >> _config-staging/spark-defaults.conf
+	echo "spark.executor.memory            $MEMORY" >> _config-staging/spark-defaults.conf
 	cp _config-staging/spark-defaults.conf $SPARK_HOME/conf/
 
 	# Prepare timing file : write config WITHOUT \n to timing file
@@ -70,14 +80,17 @@ runExperiments() {
 	echo "waiting for 60 seconds"
 	sleep 60
 
-	for EXP in $FLINK_EXPERIMENTS ; do
+	for EXP in ${FLINK_EXPERIMENTS// / } ; do
+		echo "Starting experiment $EXP"
 		start=$(date +%s)
 		case "$EXP" in
 		"flink-wordcount-wo-combine")
-			./runWC-JAPI-withoutCombine.sh >> LOG_dir"/$EXP-log"
+			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
+			./runWC-JAPI-withoutCombine.sh &>> $LOG_dir"/$EXP-log"
 			;;
 		"flink-wordcount")
-			./runWC-JAPI.sh >> LOG_dir"/$EXP-log"
+			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
+			./runWC-JAPI.sh &>> $LOG_dir"/$EXP-log"
 			;;
 		*)
 			echo "Unknown experiment $EXP"
@@ -85,7 +98,9 @@ runExperiments() {
 		esac
 		end=$(date +%s)
 		expTime=$(($end - $start))
+		echo "Experiment took $expTime seconds"
 		echo -n "$expTime;" >> $TIMES
+		sleep 2
 	done
 	./stopFlink.sh
 	experimentsFlinkLog="$LOG_dir/flink-$MACHINES-$MEMORY-log/"
@@ -97,14 +112,17 @@ runExperiments() {
 	echo "waiting again, this time for Spark"
 	sleep 60
 
-	for EXP in $SPARK_EXPERIMENTS ; do
+	for EXP in ${SPARK_EXPERIMENTS// / } ; do
 		start=$(date +%s)
 		case "$EXP" in
 		"spark-wordcount-wo-combine")
-			./runSpark-WC-Grouping-Java.sh >> LOG_dir"/$EXP-log"
+			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
+			./runSpark-WC-Grouping-Java.sh &>> $LOG_dir"/$EXP-log"
 			;;
 		"spark-wordcount")
-			./runSpark-WC-Java.sh >> LOG_dir"/$EXP-log"
+			export HDFS_WC_OUT="$HDFS_WC_OUT-second"
+			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
+			./runSpark-WC-Java.sh &>> $LOG_dir"/$EXP-log"
 			;;
 		*)
 			echo "Unknown experiment $EXP"
@@ -112,7 +130,9 @@ runExperiments() {
 		esac
 		end=$(date +%s)
 		expTime=$(($end - $start))
+		echo "Experiment took $expTime seconds"
 		echo -n "$expTime;" >> $TIMES
+		sleep 2
 	done
 	./stopSpark.sh
 	experimentsSparkLog="$LOG_dir/spark-$MACHINES-$MEMORY-log/"
@@ -124,9 +144,9 @@ runExperiments() {
 }
 
 echo "Building Flink, Spark, and Testjobs"
-./prepareFlink.sh
-./prepareSpark.sh
-./prepareTestjob.sh
+#./prepareFlink.sh
+#./prepareSpark.sh
+#./prepareTestjob.sh
 echo "Testing scaling capabilities from 5 to 25 machines."
 
 # 5 machines, 20GB mem each
