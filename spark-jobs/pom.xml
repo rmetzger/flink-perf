@@ -4,8 +4,6 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.github.project-flink</groupId>
-	<version>0.1-SNAPSHOT</version>
 	<artifactId>spark-jobs</artifactId>
 	<name>spark-jobs</name>
 
@@ -66,6 +64,20 @@
 
 							<includes>
 								<include>**/spark/WordCount*</include>
+							</includes>
+						</configuration>
+					</execution>
+					<execution>
+						<id>All</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<classifier>All</classifier>
+
+							<includes>
+								<include>**/spark/*</include>
 							</includes>
 						</configuration>
 					</execution>
