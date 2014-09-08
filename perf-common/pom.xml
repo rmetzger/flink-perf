@@ -4,8 +4,8 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>spark-jobs</artifactId>
-	<name>spark-jobs</name>
+	<artifactId>perf-common</artifactId>
+	<name>perf-common</name>
 
 	<parent>
 		<groupId>com.github.project-flink</groupId>
@@ -16,78 +16,9 @@
 
 	<packaging>jar</packaging>
 
-	<repositories>
-		<repository>
-			<id>snapshots-repo</id>
-			<url>http://repository.apache.org/content/repositories/snapshots/</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-
-	<dependencies>
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.6</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.7</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-core_2.10</artifactId>
-			<version>1.0.2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-sql_2.10</artifactId>
-			<version>1.0.2</version>
-		</dependency>
-	</dependencies>
 
 	<build>
 		<plugins>
-		<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>Spark_WC</id>
-						<phase>package</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<configuration>
-							<classifier>SparkWC</classifier>
-
-							<includes>
-								<include>**/spark/WordCount*</include>
-							</includes>
-						</configuration>
-					</execution>
-					<execution>
-						<id>All</id>
-						<phase>package</phase>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<configuration>
-							<classifier>All</classifier>
-
-							<includes>
-								<include>**/spark/*</include>
-							</includes>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
   				<groupId>org.apache.maven.plugins</groupId>
   				<artifactId>maven-compiler-plugin</artifactId>
@@ -95,50 +26,6 @@
     				<source>1.6</source>
     				<target>1.6</target>
   				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.2</version>
-				<configuration>
-					<appendAssemblyId>false</appendAssemblyId>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id> <!-- this is used for inheritance merges -->
-						<phase>package</phase> <!-- bind to the packaging phase -->
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.7</version>
-				<configuration>
-					<systemPropertyVariables>
-						<log.level>WARN</log.level>
-					</systemPropertyVariables>
-					<forkMode>once</forkMode>
-					<argLine>-Xmx1024m</argLine>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.7</version>
-				<configuration>
-					<systemPropertyVariables>
-						<log.level>WARN</log.level>
-					</systemPropertyVariables>
-					<forkMode>always</forkMode>
-					<threadCount>1</threadCount>
-					<perCoreThreadCount>false</perCoreThreadCount>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>

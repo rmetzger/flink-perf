@@ -87,7 +87,7 @@ public class LargeTestPlan implements Program, ProgramDescription {
 	// /home/twalthr/repo/test/stratosphere-fulltest/out/intermediate-keylessreducer.txt 
 	// /home/twalthr/repo/test/stratosphere-fulltest/out/ordersAvro.avro
 	// ----> For cluster testing:
-	// ./bin/stratosphere run -j /home/twalthr/testjob-0.1-SNAPSHOT.jar -c org.apache.flink.test.testPlan.LargeTestPlan -a hdfs:///user/twalthr/customer.tbl hdfs:///user/twalthr/lineitem.tbl hdfs:///user/twalthr/nation.tbl hdfs:///user/twalthr/orders.tbl hdfs:///user/twalthr/region.tbl hdfs:///user/twalthr/ordersAvro.avro “seqfile” hdfs:///user/twalthr/out 1500 26
+	// ./bin/stratosphere run -j /home/twalthr/testjob-0.1-SNAPSHOT.jar -c org.apache.flink.test.testPlan.LargeTestPlan -a hdfs:///user/twalthr/customer.tbl hdfs:///user/twalthr/lineitem.tbl hdfs:///user/twalthr/nation.tbl hdfs:///user/twalthr/orders.tbl hdfs:///user/twalthr/region.tbl hdfs:///user/twalthr/ordersAvro.avro "seqfile" hdfs:///user/twalthr/out 1500 26
 	
 	public static void main(String[] args) throws Exception {
 
