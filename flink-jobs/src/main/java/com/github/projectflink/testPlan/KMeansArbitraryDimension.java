@@ -109,8 +109,8 @@ public class KMeansArbitraryDimension {
 			.map(new SelectNearestCenter()).withBroadcastSet(finalCentroids, "centroids");
 
 		// emit result
-		clusteredPoints.writeAsCsv(outputPath, "\n", " ", FileSystem.WriteMode.OVERWRITE);
-
+		//clusteredPoints.writeAsCsv(outputPath, "\n", " ", FileSystem.WriteMode.OVERWRITE);
+		clusteredPoints.writeAsText(outputPath);
 		// execute program
 		env.execute("KMeans Multi-Dimension");
 
@@ -176,7 +176,7 @@ public class KMeansArbitraryDimension {
 
 		@Override
 		public String toString() {
-			return id + " " + super.toString();
+			return id + "," + super.toString();
 		}
 	}
 

@@ -11,7 +11,7 @@ public class Readonly {
 		String inFile = args[1];
 		System.err.println("Starting spark with master="+master+" in="+inFile);
 		
-		SparkConf conf = new SparkConf().setAppName("Read only job").setMaster(master);
+		SparkConf conf = new SparkConf().setAppName("Read only job").setMaster(master).set("spark.hadoop.validateOutputSpecs", "false");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		JavaRDD<String> file = sc.textFile(inFile);

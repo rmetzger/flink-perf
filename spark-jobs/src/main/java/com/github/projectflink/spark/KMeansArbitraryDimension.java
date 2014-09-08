@@ -43,7 +43,7 @@ public class KMeansArbitraryDimension {
 			return;
 		}
 
-		SparkConf conf = new SparkConf().setAppName("KMeans").setMaster(master);
+		SparkConf conf = new SparkConf().setAppName("KMeans Multi-Dimension").setMaster(master);
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		// ================================ Standard KMeans =============================
@@ -70,8 +70,6 @@ public class KMeansArbitraryDimension {
 
 			brCenters.unpersist();
 		}
-
-//		kCenters.saveAsTextFile(outputPath);
 
 		Broadcast<List<Tuple2<Integer, Point>>> brCenters = sc.broadcast(kCenters.collect());
 		JavaPairRDD<Integer, Point> clusteredPoints = points.mapToPair(new SelectNearestCentroid(brCenters));
