@@ -15,9 +15,9 @@ set -a
 ITERATIONS=100
 export CORES_PER_MACHINE=16
 # for adding new experiments, you also have to edit the loop in runExperiments()
-FLINK_EXPERIMENTS="flink-readonly flink-wordcount-wo-combine flink-wordcount flink-kmeans"
+FLINK_EXPERIMENTS="readonly wordcount-wo-combine wordcount kmeans"
 #FLINK_EXPERIMENTS=""
-SPARK_EXPERIMENTS="spark-readonly spark-wordcount-wo-combine spark-wordcount spark-kmeans"
+SPARK_EXPERIMENTS="readonly wordcount-wo-combine wordcount kmeans"
 
 # Preparation
 if [[ ! -e "_config-staging" ]]; then
@@ -37,15 +37,16 @@ exec > >(tee $LOG)
 exec 2>&1
 
 
-echo -n "machines;memory;" >> $TIMES
-# write experiments to headers
-MERGED="$FLINK_EXPERIMENTS $SPARK_EXPERIMENTS"
-for EXP in ${MERGED// / } ; do
-	echo -n "$EXP;" >> $TIMES
-	echo "EXP=$EXP"
-done
-# write newline
-echo "" >> $TIMES
+echo "machines;memory;system;job;time" >> $TIMES
+# echo -n "machines;memory;" >> $TIMES
+# # write experiments to headers
+# MERGED="$FLINK_EXPERIMENTS $SPARK_EXPERIMENTS"
+# for EXP in ${MERGED// / } ; do
+# 	echo -n "$EXP;" >> $TIMES
+# 	echo "EXP=$EXP"
+# done
+# # write newline
+# echo "" >> $TIMES
 
 
 # arguments
@@ -72,8 +73,6 @@ runExperiments() {
 	echo "spark.executor.memory            ${MEMORY}m" >> _config-staging/spark-defaults.conf
 	cp _config-staging/spark-defaults.conf $SPARK_HOME/conf/
 
-	# Prepare timing file : write config WITHOUT \n to timing file
-	echo -n "$MACHINES;$MEMORY;" >> $TIMES
 
 	# do Flink experiments
 
@@ -86,21 +85,22 @@ runExperiments() {
 		echo "Starting experiment $EXP"
 		start=$(date +%s)
 		case "$EXP" in
-		"flink-readonly")
+		"readonly")
 			./runReadonly.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
 			;;
-		"flink-wordcount-wo-combine")
+		"wordcount-wo-combine")
 			HDFS_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-out-$EXP-$MACHINES-$MEMORY-$benchId"
-			./runWC-JAPI-withoutCombine.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runWC-JAPI-withoutCombine.sh &>> $LOG_dir"/flink-$EXP-$MACHINES-$MEMORY-log"
 			;;
-		"flink-wordcount")
+		"fwordcount")
 			HDFS_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-out-$EXP-$MACHINES-$MEMORY-$benchId"
-			./runWC-JAPI.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runWC-JAPI.sh &>> $LOG_dir"/flink-$EXP-$MACHINES-$MEMORY-log"
 			;;
-		"flink-kmeans")
+		"kmeans")
 			HDFS_KMEANS_OUT=$HDFS_WORKING_DIRECTORY"/kmeans-out-$EXP-$MACHINES-$MEMORY-$benchId"
-			./runKMeansPerf.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runKMeansPerf.sh &>> $LOG_dir"/flink-$EXP-$MACHINES-$MEMORY-log"
 			;;
+		# add your experiment here!	
 		*)
 			echo "Unknown experiment $EXP"
 			;;
@@ -108,13 +108,14 @@ runExperiments() {
 		end=$(date +%s)
 		expTime=$(($end - $start))
 		echo "Experiment took $expTime seconds"
-		echo -n "$expTime;" >> $TIMES
+		echo "$MACHINES;$MEMORY;flink;$EXP;$expTime" >> $TIMES
 		sleep 2
 	done
 	./stopFlink.sh
 	experimentsFlinkLog="$LOG_dir/flink-$MACHINES-$MEMORY-log/"
 	mkdir -p $experimentsFlinkLog
 	cp $FILES_DIRECTORY/flink-build/log/* $experimentsFlinkLog
+	cp $FILES_DIRECTORY/flink-build/conf/* $experimentsFlinkLog
 	rm $FILES_DIRECTORY/flink-build/log/*
 
 	# Start Spark
@@ -126,21 +127,22 @@ runExperiments() {
 		echo "Starting spark experiment $EXP"
 		start=$(date +%s)
 		case "$EXP" in
-		"spark-readonly")
+		"readonly")
 			./runSparkReadonly.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
 			;;
-		"spark-wordcount-wo-combine")
+		"wordcount-wo-combine")
 			HDFS_SPARK_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-spark-out-$EXP-$MACHINES-$MEMORY-$benchId"
-			./runSpark-WC-Grouping-Java.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runSpark-WC-Grouping-Java.sh &>> $LOG_dir"/spark-$EXP-$MACHINES-$MEMORY-log"
 			;;
-		"spark-wordcount")
+		"wordcount")
 			HDFS_SPARK_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-spark-out-$EXP-$MACHINES-$MEMORY-$benchId"
-			./runSpark-WC-Java.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runSpark-WC-Java.sh &>> $LOG_dir"/spark-$EXP-$MACHINES-$MEMORY-log"
 			;;
-		"spark-kmeans")
+		"kmeans")
 			HDFS_SPARK_KMEANS_OUT=$HDFS_WORKING_DIRECTORY"/kmeans-spark-out-$EXP-$MACHINES-$MEMORY-$benchId"
-			./runSparkKMeansPerf-java.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runSparkKMeansPerf-java.sh &>> $LOG_dir"/spark-$EXP-$MACHINES-$MEMORY-log"
 			;;
+		# add your experiment here!
 		*)
 			echo "Unknown experiment $EXP"
 			;;
@@ -148,13 +150,14 @@ runExperiments() {
 		end=$(date +%s)
 		expTime=$(($end - $start))
 		echo "Experiment took $expTime seconds"
-		echo -n "$expTime;" >> $TIMES
+		echo "$MACHINES;$MEMORY;spark;$EXP;$expTime" >> $TIMES
 		sleep 2
 	done
 	./stopSpark.sh
 	experimentsSparkLog="$LOG_dir/spark-$MACHINES-$MEMORY-log/"
 	mkdir -p $experimentsSparkLog
 	cp $SPARK_HOME/logs/* $experimentsSparkLog
+	cp $SPARK_HOME/conf/* $experimentsSparkLog
 	rm $SPARK_HOME/logs/*
 
 	# write newline in timing

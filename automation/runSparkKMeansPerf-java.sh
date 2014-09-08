@@ -10,5 +10,4 @@ echo "running KMeans with args $ARGS"
 
 $SPARK_HOME/bin/spark-submit --master spark://$HOST:7077 \
  --class com.github.projectflink.spark.KMeansArbitraryDimension \
- `ls "$TESTJOB_HOME"/spark-jobs/target/spark-jobs-*.jar` \
- $ARGS
+ `ls "$TESTJOB_HOME"/spark-jobs/target/spark-jobs-*-All.jar` $ARGS
