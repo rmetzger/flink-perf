@@ -11,11 +11,13 @@ echo "Running fully fledged automated benchmarks"
 #export all these variables
 set -a
 
+# number of iterations for iterative jobs
+ITERATIONS=100
 export CORES_PER_MACHINE=16
 # for adding new experiments, you also have to edit the loop in runExperiments()
-#FLINK_EXPERIMENTS="flink-wordcount-wo-combine flink-wordcount"
-FLINK_EXPERIMENTS=""
-SPARK_EXPERIMENTS="spark-wordcount-wo-combine spark-wordcount"
+FLINK_EXPERIMENTS="flink-readonly flink-wordcount-wo-combine flink-wordcount flink-kmeans"
+#FLINK_EXPERIMENTS=""
+SPARK_EXPERIMENTS="spark-readonly spark-wordcount-wo-combine spark-wordcount spark-kmeans"
 
 # Preparation
 if [[ ! -e "_config-staging" ]]; then
@@ -67,7 +69,7 @@ runExperiments() {
 
 	# Spark config
 	cat spark-conf/spark-defaults.conf > _config-staging/spark-defaults.conf
-	echo "spark.executor.memory            $MEMORY" >> _config-staging/spark-defaults.conf
+	echo "spark.executor.memory            ${MEMORY}m" >> _config-staging/spark-defaults.conf
 	cp _config-staging/spark-defaults.conf $SPARK_HOME/conf/
 
 	# Prepare timing file : write config WITHOUT \n to timing file
@@ -84,13 +86,20 @@ runExperiments() {
 		echo "Starting experiment $EXP"
 		start=$(date +%s)
 		case "$EXP" in
+		"flink-readonly")
+			./runReadonly.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			;;
 		"flink-wordcount-wo-combine")
-			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
-			./runWC-JAPI-withoutCombine.sh &>> $LOG_dir"/$EXP-log"
+			HDFS_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-out-$EXP-$MACHINES-$MEMORY-$benchId"
+			./runWC-JAPI-withoutCombine.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
 			;;
 		"flink-wordcount")
-			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
-			./runWC-JAPI.sh &>> $LOG_dir"/$EXP-log"
+			HDFS_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-out-$EXP-$MACHINES-$MEMORY-$benchId"
+			./runWC-JAPI.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			;;
+		"flink-kmeans")
+			HDFS_KMEANS_OUT=$HDFS_WORKING_DIRECTORY"/kmeans-out-$EXP-$MACHINES-$MEMORY-$benchId"
+			./runKMeansPerf.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
 			;;
 		*)
 			echo "Unknown experiment $EXP"
@@ -106,6 +115,7 @@ runExperiments() {
 	experimentsFlinkLog="$LOG_dir/flink-$MACHINES-$MEMORY-log/"
 	mkdir -p $experimentsFlinkLog
 	cp $FILES_DIRECTORY/flink-build/log/* $experimentsFlinkLog
+	rm $FILES_DIRECTORY/flink-build/log/*
 
 	# Start Spark
 	./startSpark.sh
@@ -113,16 +123,23 @@ runExperiments() {
 	sleep 60
 
 	for EXP in ${SPARK_EXPERIMENTS// / } ; do
+		echo "Starting spark experiment $EXP"
 		start=$(date +%s)
 		case "$EXP" in
+		"spark-readonly")
+			./runSparkReadonly.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			;;
 		"spark-wordcount-wo-combine")
-			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
-			./runSpark-WC-Grouping-Java.sh &>> $LOG_dir"/$EXP-log"
+			HDFS_SPARK_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-spark-out-$EXP-$MACHINES-$MEMORY-$benchId"
+			./runSpark-WC-Grouping-Java.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
 			;;
 		"spark-wordcount")
-			export HDFS_WC_OUT="$HDFS_WC_OUT-second"
-			HDFS_WC_OUT="$HDFS_WC_OUT-$EXP-$benchId"
-			./runSpark-WC-Java.sh &>> $LOG_dir"/$EXP-log"
+			HDFS_SPARK_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-spark-out-$EXP-$MACHINES-$MEMORY-$benchId"
+			./runSpark-WC-Java.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			;;
+		"spark-kmeans")
+			HDFS_SPARK_KMEANS_OUT=$HDFS_WORKING_DIRECTORY"/kmeans-spark-out-$EXP-$MACHINES-$MEMORY-$benchId"
+			./runSparkKMeansPerf-java.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
 			;;
 		*)
 			echo "Unknown experiment $EXP"
@@ -138,15 +155,16 @@ runExperiments() {
 	experimentsSparkLog="$LOG_dir/spark-$MACHINES-$MEMORY-log/"
 	mkdir -p $experimentsSparkLog
 	cp $SPARK_HOME/logs/* $experimentsSparkLog
+	rm $SPARK_HOME/logs/*
 
 	# write newline in timing
 	echo "" >> $TIMES
 }
 
 echo "Building Flink, Spark, and Testjobs"
-#./prepareFlink.sh
-#./prepareSpark.sh
-#./prepareTestjob.sh
+./prepareFlink.sh
+./prepareSpark.sh
+./prepareTestjob.sh
 echo "Testing scaling capabilities from 5 to 25 machines."
 
 # 5 machines, 20GB mem each
@@ -164,6 +182,6 @@ runExperiments 5 15000
 runExperiments 25 5000
 
 
-echo "Experiments done "
+echo "Experiments done"
 
-tar czf "benchmarks/$LOG_dir.tgz" benchmarks/$LOG_dir
+tar czf "$LOG_dir.tgz" $LOG_dir
