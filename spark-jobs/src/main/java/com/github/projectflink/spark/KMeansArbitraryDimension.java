@@ -27,6 +27,10 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.spark.serializer.KryoSerializer;
+
+import com.esotericsoftware.kryo.Kryo;
+
 import scala.Tuple2;
 
 import java.io.Serializable;
@@ -35,7 +39,16 @@ import java.util.List;
 
 
 public class KMeansArbitraryDimension {
-
+	class MyRegistrator extends KryoSerializer {
+		public MyRegistrator(SparkConf conf) {
+			super(conf);
+		}
+		public void registerClasses(Kryo kryo) {
+			System.err.println("Registered Point with Kryo");
+	        kryo.register(Point.class);
+	    }
+		  
+	}
 
 	public static void main(String[] args) {
 
