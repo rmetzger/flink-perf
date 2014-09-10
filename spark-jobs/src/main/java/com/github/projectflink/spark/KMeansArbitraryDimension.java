@@ -62,8 +62,9 @@ public class KMeansArbitraryDimension {
 		// ================================ Standard KMeans =============================
 
 		JavaRDD<Point> points = sc
-			.textFile(pointsPath)
+			.textFile(pointsPath, 400)
 			.map(new ConvertToPoint());
+		points.cache();
 
 		JavaPairRDD<Integer, Point> kCenters = sc
 			.textFile(centersPath)
@@ -77,7 +78,7 @@ public class KMeansArbitraryDimension {
 				.mapToPair(new SelectNearestCentroid(brCenters))
 				// count and sum point coordinates for each centroid
 				.mapToPair(new CountAppender())
-				.reduceByKey(new CentroidSum(), 400)
+				.reduceByKey(new CentroidSum())
 				// calculate the mean( the new center ) of each cluster
 				.mapToPair(new CentroidAverage());
 
