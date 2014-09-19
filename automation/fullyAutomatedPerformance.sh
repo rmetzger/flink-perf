@@ -12,7 +12,7 @@ echo "Running fully fledged automated benchmarks"
 set -a
 
 # number of iterations for iterative jobs
-ITERATIONS=100
+ITERATIONS=10
 export CORES_PER_MACHINE=16
 # for adding new experiments, you also have to edit the loop in runExperiments()
 FLINK_EXPERIMENTS="readonly wordcount-wo-combine wordcount kmeans"
@@ -71,6 +71,7 @@ runExperiments() {
 	# Spark config
 	cat spark-conf/spark-defaults.conf > _config-staging/spark-defaults.conf
 	echo "spark.executor.memory            ${MEMORY}m" >> _config-staging/spark-defaults.conf
+	echo "spark.default.parallelism            $DOP" >> _config-staging/spark-defaults.conf
 	cp _config-staging/spark-defaults.conf $SPARK_HOME/conf/
 
 
@@ -86,13 +87,13 @@ runExperiments() {
 		start=$(date +%s)
 		case "$EXP" in
 		"readonly")
-			./runReadonly.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runReadonly.sh &>> $LOG_dir"/flink-$EXP-$MACHINES-$MEMORY-log"
 			;;
 		"wordcount-wo-combine")
 			HDFS_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-out-$EXP-$MACHINES-$MEMORY-$benchId"
 			./runWC-JAPI-withoutCombine.sh &>> $LOG_dir"/flink-$EXP-$MACHINES-$MEMORY-log"
 			;;
-		"fwordcount")
+		"wordcount")
 			HDFS_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-out-$EXP-$MACHINES-$MEMORY-$benchId"
 			./runWC-JAPI.sh &>> $LOG_dir"/flink-$EXP-$MACHINES-$MEMORY-log"
 			;;
@@ -128,7 +129,7 @@ runExperiments() {
 		start=$(date +%s)
 		case "$EXP" in
 		"readonly")
-			./runSparkReadonly.sh &>> $LOG_dir"/$EXP-$MACHINES-$MEMORY-log"
+			./runSparkReadonly.sh &>> $LOG_dir"/spark-$EXP-$MACHINES-$MEMORY-log"
 			;;
 		"wordcount-wo-combine")
 			HDFS_SPARK_WC_OUT=$HDFS_WORKING_DIRECTORY"/wc-spark-out-$EXP-$MACHINES-$MEMORY-$benchId"
@@ -159,9 +160,6 @@ runExperiments() {
 	cp $SPARK_HOME/logs/* $experimentsSparkLog
 	cp $SPARK_HOME/conf/* $experimentsSparkLog
 	rm $SPARK_HOME/logs/*
-
-	# write newline in timing
-	echo "" >> $TIMES
 }
 
 echo "Building Flink, Spark, and Testjobs"
@@ -180,6 +178,7 @@ echo "Testing memory behavior"
 runExperiments 5 5000
 runExperiments 5 10000
 runExperiments 5 15000
+
 # the 5 / 20000 datapoint is available.
 
 runExperiments 25 5000
