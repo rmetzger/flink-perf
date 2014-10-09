@@ -57,6 +57,8 @@ public class KMeansArbitraryDimension {
 		}
 
 		SparkConf conf = new SparkConf().setAppName("KMeans Multi-Dimension").setMaster(master);
+		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		conf.set("spark.kryo.registrator", "com.github.projectflink.spark.MyRegistrator");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		// ================================ Standard KMeans =============================
@@ -78,7 +80,8 @@ public class KMeansArbitraryDimension {
 				.mapToPair(new SelectNearestCentroid(brCenters))
 				// count and sum point coordinates for each centroid
 				.mapToPair(new CountAppender())
-				.reduceByKey(new CentroidSum())
+			//	.reduceByKey(new CentroidSum())
+				//.groupByKey().map()
 				// calculate the mean( the new center ) of each cluster
 				.mapToPair(new CentroidAverage());
 

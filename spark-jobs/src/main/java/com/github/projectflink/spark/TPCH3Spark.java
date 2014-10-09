@@ -13,6 +13,10 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.serializer.KryoSerializer;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.github.projectflink.spark.KMeansArbitraryDimension.Point;
 
 import scala.Tuple2;
 import scala.Tuple3;
@@ -21,6 +25,20 @@ import scala.Tuple5;
 
 
 public class TPCH3Spark {
+	class MyRegistrator extends KryoSerializer {
+		public MyRegistrator(SparkConf conf) {
+			super(conf);
+		}
+		public void registerClasses(Kryo kryo) {
+			System.err.println("Registered Stuff with Kryo");
+	        kryo.register(Lineitem.class);
+	        kryo.register(Customer.class);
+	        kryo.register(Order.class);
+	        kryo.register(ShippingPriorityItem.class);
+	    }
+		  
+	}
+	
 	// *************************************************************************
 	//     PROGRAM
 	// *************************************************************************
@@ -35,6 +53,8 @@ public class TPCH3Spark {
 		
 
 		SparkConf conf = new SparkConf().setAppName("TPCH 3").setMaster(master).set("spark.hadoop.validateOutputSpecs", "false");
+		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		conf.set("spark.kryo.registrator", "com.github.projectflink.spark.MyRegistrator");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		// get input data
