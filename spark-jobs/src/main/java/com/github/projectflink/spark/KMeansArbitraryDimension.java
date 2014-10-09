@@ -40,27 +40,14 @@ public class KMeansArbitraryDimension {
 
 	public static void main(String[] args) {
 
-		try {
-			Object inst = Class.forName("com.github.projectflink.spark.MyRegistrator", true, Thread.currentThread().getContextClassLoader()).newInstance();
-			MyRegistrator a = (MyRegistrator) inst;
-			a.registerClasses(null);
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-
-		System.exit(0);
-
 		if(!parseParameters(args)) {
 			return;
 		}
 
 		SparkConf conf = new SparkConf().setAppName("KMeans Multi-Dimension").setMaster(master);
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryo.registrator", ScalaRegistrator.class.getCanonicalName());
+		// conf.set("spark.kryo.registrator", ScalaRegistrator.class.getCanonicalName());
+		conf.set("spark.kryo.registrator", MyRegistrator.class.getCanonicalName());
 
 
 
