@@ -8,8 +8,12 @@ import org.apache.spark.serializer.KryoRegistrator;
 */
 
 public class MyRegistrator implements KryoRegistrator {
+
+	public MyRegistrator() {
+
+	}
 	public void registerClasses(Kryo kryo) {
-		System.err.println("Registered Point with Kryo");
+		System.err.println("++++++++++++++Registered Point with Kryo++++++++++++++++++");
 		kryo.register(KMeansArbitraryDimension.Point.class);
 	}
 
