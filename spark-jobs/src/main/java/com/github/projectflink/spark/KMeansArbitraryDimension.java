@@ -39,7 +39,7 @@ import java.util.List;
 
 
 public class KMeansArbitraryDimension {
-	class MyRegistrator extends KryoSerializer {
+	public static class MyRegistrator extends KryoSerializer {
 		public MyRegistrator(SparkConf conf) {
 			super(conf);
 		}
@@ -58,7 +58,7 @@ public class KMeansArbitraryDimension {
 
 		SparkConf conf = new SparkConf().setAppName("KMeans Multi-Dimension").setMaster(master);
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryo.registrator", "com.github.projectflink.spark.MyRegistrator");
+		conf.set("spark.kryo.registrator", MyRegistrator.class.getCanonicalName());
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		// ================================ Standard KMeans =============================
