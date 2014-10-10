@@ -13,10 +13,14 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.serializer.KryoSerializer;
+import org.apache.spark.serializer.KryoRegistrator;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.github.projectflink.spark.KMeansArbitraryDimension.Point;
+import com.github.projectflink.spark.TPCH3Spark.Customer;
+import com.github.projectflink.spark.TPCH3Spark.Lineitem;
+import com.github.projectflink.spark.TPCH3Spark.Order;
+import com.github.projectflink.spark.TPCH3Spark.ShippingPriorityItem;
+import com.github.projectflink.spark.scala.TPCH3ScalaReg;
 
 import scala.Tuple2;
 import scala.Tuple3;
@@ -24,25 +28,19 @@ import scala.Tuple4;
 import scala.Tuple5;
 
 
+/**
+ * local[4] file:///home/robert/flink-workdir/flink-perf/automation/workdir/testjob-data/lineitem.tbl file:///home/robert/flink-workdir/flink-perf/automation/workdir/testjob-data/order.tbl  file:///home/robert/flink-workdir/flink-perf/automation/workdir/testjob-data/customer.tbl  file:///home/robert/flink-workdir/flink-perf/localsparkout/tpch3/
+ * 
+ * 
+ *
+ */
+
 public class TPCH3Spark {
-	class MyRegistrator extends KryoSerializer {
-		public MyRegistrator(SparkConf conf) {
-			super(conf);
-		}
-		public void registerClasses(Kryo kryo) {
-			System.err.println("Registered Stuff with Kryo");
-	        kryo.register(Lineitem.class);
-	        kryo.register(Customer.class);
-	        kryo.register(Order.class);
-	        kryo.register(ShippingPriorityItem.class);
-	    }
-		  
-	}
 	
 	// *************************************************************************
 	//     PROGRAM
 	// *************************************************************************
-	public static String SPLIT = ",";
+	public static String SPLIT = "\\|";
 	public static void main(String[] args) throws Exception {
 		String master = args[0];
 		String lineitem = args[1];
@@ -54,7 +52,7 @@ public class TPCH3Spark {
 
 		SparkConf conf = new SparkConf().setAppName("TPCH 3").setMaster(master).set("spark.hadoop.validateOutputSpecs", "false");
 		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-		conf.set("spark.kryo.registrator", "com.github.projectflink.spark.MyRegistrator");
+		conf.set("spark.kryo.registrator", TPCH3ScalaReg.class.getName());
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		// get input data
@@ -69,6 +67,7 @@ public class TPCH3Spark {
 				// 1000011000100000
 				// 0123456789012345
 				// 0    12   3
+				System.err.println("Line item keys = "+el[0]);
 				Lineitem li = new Lineitem(Integer.getInteger(el[0]), Double.valueOf(el[6]), 
 						Double.valueOf(el[5]), el[10]);
 				return new Tuple2<Integer, TPCH3Spark.Lineitem>(li.getOrderkey(), li);
@@ -142,6 +141,8 @@ public class TPCH3Spark {
 			}
 		);
 		
+		System.err.println("++++++ Li count = "+li.count()+" cust count = "+cust.count()+" orders count = "+or.count());
+		
 		JavaPairRDD<Integer, ShippingPriorityItem> customerWithOrders = cust.join(or)
 				// set orderkey to key (for upcoming join)
 				.mapToPair(new PairFunction<Tuple2<Integer,Tuple2<Customer,Order>>, Integer, ShippingPriorityItem>() {
@@ -152,6 +153,7 @@ public class TPCH3Spark {
 						final Order second = t._2()._2();
 						ShippingPriorityItem spi = new ShippingPriorityItem(0, 0.0, second.getOrderdate(),
 								second.getShippriority(), second.getOrderkey());
+						System.err.println("C with O keys = "+second.getOrderkey());
 						return new Tuple2<Integer, ShippingPriorityItem>(second.getOrderkey(), spi);
 					}
 					/**
@@ -165,22 +167,31 @@ public class TPCH3Spark {
 					 */
 		});
 		
+		System.err.println("++++++ customerWithOrders count "+customerWithOrders.count());
+		
 		JavaPairRDD<Integer, Tuple2<ShippingPriorityItem, Lineitem>> joined = customerWithOrders.join(li);
-		JavaPairRDD<String, ShippingPriorityItem> joined1 = joined.mapToPair(
-				new PairFunction<Tuple2<Integer,Tuple2<ShippingPriorityItem,Lineitem>>, String, ShippingPriorityItem>() {
+		
+		System.err.println("++++++ joined count "+joined.count());
+		
+		// .groupBy(0, 2, 3)
+		JavaPairRDD<Tuple3<Integer, String, Integer>, ShippingPriorityItem> joined1 = joined.mapToPair(
+				new PairFunction<Tuple2<Integer,Tuple2<ShippingPriorityItem,Lineitem>>, Tuple3<Integer, String, Integer>, ShippingPriorityItem>() {
 					@Override
-					public Tuple2<String, ShippingPriorityItem> call(
+					public Tuple2<Tuple3<Integer, String, Integer>, ShippingPriorityItem> call(
 							Tuple2<Integer, Tuple2<ShippingPriorityItem, Lineitem>> t)
 							throws Exception {
 						final ShippingPriorityItem spi = t._2()._1();
 						final Lineitem second = t._2()._2();
 						ShippingPriorityItem spiImmu = new ShippingPriorityItem(second.getOrderkey(), 
 								second.getExtendedprice() * (1 - second.getDiscount()), spi._3(), spi._4(), spi._5());
-						return new Tuple2<String, ShippingPriorityItem>(""+spiImmu._1()+spiImmu._3()+spiImmu._3(), 
+						return new Tuple2<Tuple3<Integer, String, Integer>, ShippingPriorityItem>(new Tuple3<Integer, String, Integer>(spiImmu._1(),spiImmu._3(),spiImmu._4()), 
 								spiImmu);
 					}
 		});
-		joined1.reduceByKey(new Function2<TPCH3Spark.ShippingPriorityItem, TPCH3Spark.ShippingPriorityItem, TPCH3Spark.ShippingPriorityItem>() {
+		
+		System.err.println("++++++ joined1 count "+joined1.count());
+		
+		JavaPairRDD<Tuple3<Integer, String, Integer>, ShippingPriorityItem> finalDs = joined1.reduceByKey(new Function2<TPCH3Spark.ShippingPriorityItem, TPCH3Spark.ShippingPriorityItem, TPCH3Spark.ShippingPriorityItem>() {
 			
 			@Override
 			public ShippingPriorityItem call(
@@ -189,7 +200,10 @@ public class TPCH3Spark {
 				return new ShippingPriorityItem(v1._1(), v1._2()+v2._2(), v1._3(), v1._4(), v1._5());
 			}
 		});
-		joined1.saveAsTextFile(output);
+		
+		System.err.println("++++++ finalDs count "+finalDs.count());
+		
+		finalDs.saveAsTextFile(output);
 
 		// Join the last join result with Lineitems
 	/*	DataSet<ShippingPriorityItem> joined =
@@ -251,6 +265,8 @@ public class TPCH3Spark {
 		public Integer getShippriority() { return this._3(); }
 	}
 
+	
+															// 0      1        2    	3		4
 	public static class ShippingPriorityItem extends Tuple5<Integer, Double, String, Integer, Integer> {
 
 
