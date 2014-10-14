@@ -1,11 +1,25 @@
 package com.github.projectflink
 
-import org.apache.flink.api.scala.{DataSet, ExecutionEnvironment}
+import org.apache.flink.api.scala._
 
 import scala.util.Random
 
+/**
+ * Skeleton for a Flink Job.
+ *
+ * For a full example of a Flink Job, see the WordCountJob.scala file in the
+ * same package/directory or have a look at the website.
+ *
+ * You can also generate a .jar file that you can submit on your Flink
+ * cluster. Just type
+ * {{{
+ *   mvn clean package
+ * }}}
+ * in the projects root directory. You will find the jar in
+ * target/flink-quickstart-0.1-SNAPSHOT-Sample.jar
+ *
+ */
 object Pagerank {
-
   case class Pagerank(node: Int, rank: Double){
     def +(pagerank: Pagerank) = {
       Pagerank(node, rank + pagerank.rank)
@@ -17,16 +31,13 @@ object Pagerank {
     }
   }
 
-  var numVertices = 10
+  val numVertices = 1000
   val dampingFactor = 0.85
-  var maxIterations = 10
-  var sparsity = 0.5
+  val maxIterations = 10
 
   def main(args: Array[String]) {
     // set up the execution environment
-    numVertices = args(0).toInt
-    sparsity = args(1).toDouble
-
+    ExecutionEnvironment.createCollectionsEnvironment
     val env = ExecutionEnvironment.getExecutionEnvironment
 
     val adjacencyMatrix = getInitialAdjacencyMatrix(numVertices, env)
@@ -75,8 +86,8 @@ object Pagerank {
     env.fromCollection(1 to numVertices).map{
       node =>
         val rand = new Random(node)
-        val neighbours = for(i <- 1 to numVertices if(i != node && rand.nextDouble() > sparsity))
-        yield {
+        val neighbours = for(i <- 1 to numVertices if(i != node && rand.nextDouble() > 0.5)) yield {
+
           i
         }
 
