@@ -5,6 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
 
+import _root_.scala.collection.mutable
 
 
 object Pagerank {
@@ -32,12 +33,25 @@ object Pagerank {
       val sp = line.split(" ")
       (sp(0).toInt, sp(1).toInt)
     }
+    val grouped = inKV.groupByKey();
 
-  //  val adjacencyMatrix = createAdjacencyMatrix(numVertices, sparsity)
+    val adjacencyMatrix = grouped.map{ (tupIn) => // how to use pattern matchin? here, to directly extract the tuple?
+      val nList = mutable.MutableList[Int]();
+      tupIn._2.foreach ( i => {
+        nList += i
+      } )
+      (tupIn._1, nList)
+    }
+
+    var pagerank = grouped.map{ (tup) =>
+      (tup._1, 1.0/numVertices)
+    }
+
+    //  val adjacencyMatrix = createAdjacencyMatrix(numVertices, sparsity)
 
   //  var pagerank = createInitialPagerank(numVertices)
 
- /*   for(i <- 1 to maxIterations) {
+    for(i <- 1 to maxIterations) {
       pagerank = pagerank.join(adjacencyMatrix).flatMap {
         case (node, (rank, neighbours)) => {
           neighbours.map {
@@ -53,7 +67,7 @@ object Pagerank {
     }else{
       pagerank.foreach(println _)
     }
-  } */
+  }
 
   /*def createInitialPagerank(numVertices: Int)(implicit sc: SparkContext) = {
     sc.parallelize(1 to numVertices map ((_, 1.0/numVertices)))
@@ -73,5 +87,5 @@ object Pagerank {
         }
         (node, neighbours)
     } */
-  }
+
 }
