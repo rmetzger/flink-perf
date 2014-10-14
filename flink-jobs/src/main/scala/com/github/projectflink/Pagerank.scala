@@ -114,7 +114,7 @@ object Pagerank {
     // solution.print()
     solution.writeAsText(outPath, WriteMode.OVERWRITE)
 
-    env.execute("Flink Scala API Skeleton")
+    env.execute("Page Rank Flink Scala")
   }
 
 /*  def getInitialPagerank(numVertices: Int, env: ExecutionEnvironment): DataSet[Pagerank] = {

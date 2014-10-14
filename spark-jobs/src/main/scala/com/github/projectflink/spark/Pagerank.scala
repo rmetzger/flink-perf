@@ -1,10 +1,10 @@
 package com.github.projectflink.spark
 
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
 
-import _root_.scala.util.Random
 
 
 object Pagerank {
@@ -19,17 +19,25 @@ object Pagerank {
     }else{
       null
     }
+    val input = args(5)
 
     val dampingFactor = 0.85
 
     val conf = new SparkConf().setAppName("Spark pagerank").setMaster(master)
+    conf.set("spark.hadoop.skipOutputChecks", "false")
     implicit val sc = new SparkContext(conf)
 
-    val adjacencyMatrix = createAdjacencyMatrix(numVertices, sparsity)
+    val inData : RDD[String] = sc.textFile(input.toString)
+    val inKV = inData.map { line:String =>
+      val sp = line.split(" ")
+      (sp(0).toInt, sp(1).toInt)
+    }
 
-    var pagerank = createInitialPagerank(numVertices)
+  //  val adjacencyMatrix = createAdjacencyMatrix(numVertices, sparsity)
 
-    for(i <- 1 to maxIterations) {
+  //  var pagerank = createInitialPagerank(numVertices)
+
+ /*   for(i <- 1 to maxIterations) {
       pagerank = pagerank.join(adjacencyMatrix).flatMap {
         case (node, (rank, neighbours)) => {
           neighbours.map {
@@ -45,9 +53,9 @@ object Pagerank {
     }else{
       pagerank.foreach(println _)
     }
-  }
+  } */
 
-  def createInitialPagerank(numVertices: Int)(implicit sc: SparkContext) = {
+  /*def createInitialPagerank(numVertices: Int)(implicit sc: SparkContext) = {
     sc.parallelize(1 to numVertices map ((_, 1.0/numVertices)))
   }
 
@@ -64,6 +72,6 @@ object Pagerank {
             }
         }
         (node, neighbours)
-    }
+    } */
   }
 }
