@@ -1,9 +1,11 @@
 package com.github.projectflink.spark
 
+
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
 
-import scala.util.Random
+import _root_.scala.util.Random
+
 
 object Pagerank {
 
