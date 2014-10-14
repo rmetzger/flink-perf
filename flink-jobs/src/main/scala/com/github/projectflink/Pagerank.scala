@@ -1,22 +1,35 @@
 package com.github.projectflink
 
+import org.apache.flink.api.java.io.CsvInputFormat
+import org.apache.flink.api.java.typeutils.TypeInfoParser
 import org.apache.flink.api.scala._
+import org.apache.flink.api.scala.operators.ScalaCsvInputFormat
+import org.apache.flink.core.fs.FileSystem.WriteMode
+import org.apache.flink.core.fs.Path
+import org.apache.flink.util.Collector
 
+import scala.collection.mutable
 import scala.util.Random
 
 /**
- * Skeleton for a Flink Job.
+ * Dataset source : http://konect.uni-koblenz.de/networks/twitter
  *
- * For a full example of a Flink Job, see the WordCountJob.scala file in the
- * same package/directory or have a look at the website.
+ * File format
+ * [from] [to]
  *
- * You can also generate a .jar file that you can submit on your Flink
- * cluster. Just type
- * {{{
- *   mvn clean package
- * }}}
- * in the projects root directory. You will find the jar in
- * target/flink-quickstart-0.1-SNAPSHOT-Sample.jar
+ * Example: (first  lines)
+% asym unweighted
+1 2
+1 3
+1 4
+1 5
+1 6
+1 7
+
+   41,652,230 vertices (users)
+1,468,365,182 edges (followings)
+
+ *
  *
  */
 object Pagerank {
@@ -31,17 +44,43 @@ object Pagerank {
     }
   }
 
-  val numVertices = 1000
+  var numVertices = 10
   val dampingFactor = 0.85
   val maxIterations = 10
 
   def main(args: Array[String]) {
+    val inPath = args(0)
+    val outPath = args(1)
+    numVertices = args(2).toInt
     // set up the execution environment
-    ExecutionEnvironment.createCollectionsEnvironment
     val env = ExecutionEnvironment.getExecutionEnvironment
 
-    val adjacencyMatrix = getInitialAdjacencyMatrix(numVertices, env)
-    val initialPagerank = getInitialPagerank(numVertices, env)
+    //val csvIn = new CsvInputFormat[org.apache.flink.api.java.tuple.Tuple1[String]](new Path(inPath), classOf[String])
+    //csvIn.setSkipFirstLineAsHeader(true);
+   // val inData : DataSet[org.apache.flink.api.java.tuple.Tuple1[String]] = env.createInput(csvIn)
+  //  val csvIn = new ScalaCsvInputFormat[Tuple2[Int, Int]](new Path(inPath), fakeType.getType() );
+    val inData = env.readTextFile(inPath)
+    val pairs = inData.map({ line =>
+      val sp = line.split(" ")
+      (sp(0).toInt, sp(1).toInt) // return tuple (int, int)
+    })
+
+    val grouped = pairs.groupBy(0);
+    val adjacencyMatrix : DataSet[AdjacencyRow] = grouped.reduceGroup {
+      (in, out:Collector[AdjacencyRow]) =>
+        val set = in.toSet;
+        val nodeId = set.head._1
+        val neighbours = mutable.MutableList[Int]();
+        set.foreach( tup => {neighbours += tup._2})
+        out.collect(AdjacencyRow(nodeId, neighbours.toArray))
+    }
+    val initialPagerank : DataSet[Pagerank] = grouped.reduceGroup {
+      (in, out:Collector[Pagerank]) =>
+        val first = in.toIterator.next()
+        out.collect(Pagerank(first._1, 1.0d/numVertices))
+    }
+    //val adjacencyMatrix = getInitialAdjacencyMatrix(numVertices, env)
+    //val initialPagerank = getInitialPagerank(numVertices, env)
 
     val solution = initialPagerank.iterateWithTermination(maxIterations) {
       pagerank =>
@@ -70,14 +109,15 @@ object Pagerank {
         (nextPagerank, termination)
     }
 
-    adjacencyMatrix.print()
+    //adjacencyMatrix.print()
 
-    solution.print()
+    // solution.print()
+    solution.writeAsText(outPath, WriteMode.OVERWRITE)
 
     env.execute("Flink Scala API Skeleton")
   }
 
-  def getInitialPagerank(numVertices: Int, env: ExecutionEnvironment): DataSet[Pagerank] = {
+/*  def getInitialPagerank(numVertices: Int, env: ExecutionEnvironment): DataSet[Pagerank] = {
     env.fromCollection(1 to numVertices map { i => Pagerank(i, 1.0d/numVertices)})
   }
 
@@ -93,5 +133,5 @@ object Pagerank {
 
         AdjacencyRow(node, neighbours.toArray)
     }
-  }
+  } */
 }
