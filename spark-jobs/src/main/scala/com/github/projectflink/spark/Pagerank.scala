@@ -36,7 +36,7 @@ object Pagerank {
     }
     val adjacencyMatrix = inKV.groupByKey().cache()
 
-    var pagerank = sc.parallelize(1 to numVertices map ((_, 1.0/numVertices)))
+    var pagerank = sc.parallelize(1 to numVertices, dop) map ((_, 1.0/numVertices))
 
     for(i <- 1 to maxIterations) {
       pagerank = pagerank.join(adjacencyMatrix, dop).flatMap {
