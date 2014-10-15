@@ -77,7 +77,8 @@ object Pagerank {
     }
 
     val initialPagerank : DataSet[Pagerank] = {
-      env.fromCollection(1 to numVertices) map { Pagerank(_, 1.0d/numVertices)}
+      //env.fromCollection(1 to numVertices) map { Pagerank(_, 1.0d/numVertices)}
+      env.generateSequence(1, numVertices) map{ t => Pagerank(t.toInt, 1.0d/numVertices)}
     }
     //val adjacencyMatrix = getInitialAdjacencyMatrix(numVertices, env)
     //val initialPagerank = getInitialPagerank(numVertices, env)
