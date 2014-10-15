@@ -46,12 +46,13 @@ object Pagerank {
 
   var numVertices = 10
   val dampingFactor = 0.85
-  val maxIterations = 10
+  var maxIterations = 10
 
   def main(args: Array[String]) {
     val inPath = args(0)
     val outPath = args(1)
     numVertices = args(2).toInt
+    maxIterations = args(3).toInt
     // set up the execution environment
     val env = ExecutionEnvironment.getExecutionEnvironment
 
