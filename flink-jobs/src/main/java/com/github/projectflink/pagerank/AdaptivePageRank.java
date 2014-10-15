@@ -44,10 +44,11 @@ public class AdaptivePageRank {
 		double threshold = 0.001 / numVertices;
 		double dampeningFactor = 0.85;
 
-		String adjacencyPath = "/data/demodata/pagerank/adjacency/adjacency.csv";
-		String outpath = "/home/cicero/Desktop/out.txt";
+	//	String adjacencyPath = "/data/demodata/pagerank/adjacency/adjacency.csv";
+//		String outpath = "/home/cicero/Desktop/out.txt";
 
-
+		String adjacencyPath = args.length > 1 ? args[0] : "/data/demodata/pagerank/edges/edges.csv";
+		String outpath = args.length > 1 ? args[1] : "/data/demodata/pagerank/adacency_comp";
 
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		// env.setDegreeOfParallelism(1);

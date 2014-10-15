@@ -55,7 +55,7 @@ object Pagerank {
     }
 
     if(output != null) {
-      pagerank.saveAsTextFile(output)
+      pagerank.saveAsTextFile(output+"_spark")
     }else{
       pagerank.foreach(println _)
     }

@@ -99,7 +99,7 @@ object Pagerank {
     //adjacencyMatrix.print()
 
     // solution.print()
-    solution.writeAsText(outPath, WriteMode.OVERWRITE)
+    solution.writeAsText(outPath+"_flink", WriteMode.OVERWRITE)
 
     env.execute("Page Rank Flink Scala")
   }
