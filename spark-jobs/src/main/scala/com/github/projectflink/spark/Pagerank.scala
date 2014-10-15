@@ -4,6 +4,7 @@ package com.github.projectflink.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
+import org.apache.zookeeper.KeeperException.SystemErrorException
 
 import _root_.scala.collection.mutable
 
@@ -39,6 +40,7 @@ object Pagerank {
     var pagerank = sc.parallelize(1 to numVertices, dop) map ((_, 1.0/numVertices))
 
     for(i <- 1 to maxIterations) {
+      System.out.println("++++ Starting next iteration");
       pagerank = pagerank.join(adjacencyMatrix, dop).flatMap {
         case (node, (rank, neighboursIt)) => {
           val neighbours = neighboursIt.toSeq
@@ -47,6 +49,7 @@ object Pagerank {
           } :+ (node, (1 - dampingFactor) / numVertices)
         }
       }.reduceByKey(_ + _, dop)
+      pagerank.foreach( println(_))
 
     }
 
