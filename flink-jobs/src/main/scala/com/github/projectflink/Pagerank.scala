@@ -67,24 +67,23 @@ object Pagerank {
 
     val grouped = pairs.groupBy(0);
     val adjacencyMatrix : DataSet[AdjacencyRow] = grouped.reduceGroup {
-      (in, out:Collector[AdjacencyRow]) =>
-        val set = in.toSet;
-        val nodeId = set.head._1
-        val neighbours = mutable.MutableList[Int]();
-        set.foreach( tup => {neighbours += tup._2})
-        out.collect(AdjacencyRow(nodeId, neighbours.toArray))
+      group =>
+        val iterable = group.toIterable
+        val head = iterable.head
+        val result = iterable.foldLeft((head._1, List(head._2))){
+          case ((id, neighbours), (_, neighbour)) => (id, neighbour :: neighbours)
+        }
+        AdjacencyRow(result._1, result._2.toArray)
     }
-    val initialPagerank : DataSet[Pagerank] = grouped.reduceGroup {
-      (in, out:Collector[Pagerank]) =>
-        val first = in.toIterator.next()
-        out.collect(Pagerank(first._1, 1.0d/numVertices))
+
+    val initialPagerank : DataSet[Pagerank] = {
+      env.fromCollection(1 to numVertices) map { Pagerank(_, 1.0d/numVertices)}
     }
     //val adjacencyMatrix = getInitialAdjacencyMatrix(numVertices, env)
     //val initialPagerank = getInitialPagerank(numVertices, env)
 
-    val solution = initialPagerank.iterateWithTermination(maxIterations) {
-      pagerank =>
-        val nextPagerank = pagerank.join(adjacencyMatrix).where(_.node).equalTo(_.node)
+    val solution = initialPagerank.iterate(maxIterations) {
+        _.join(adjacencyMatrix).where(_.node).equalTo(_.node)
           .flatMap {
           _ match{
             case (Pagerank(node, rank), AdjacencyRow(_, neighbours)) =>{
@@ -95,18 +94,6 @@ object Pagerank {
             }
           }
         }.groupBy(_.node).reduce(_ + _)
-
-        val termination = pagerank.join(nextPagerank).where(_.node).equalTo(_.node).flatMap{
-          _ match {
-            case (Pagerank(_, left), Pagerank(_, right)) => if(left != right) {
-              Some(left)
-            }else{
-              None
-            }
-          }
-        }
-
-        (nextPagerank, termination)
     }
 
     //adjacencyMatrix.print()

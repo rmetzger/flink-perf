@@ -21,6 +21,7 @@ object Pagerank {
       null
     }
     val input = args(5)
+    val dop = args(6).toInt
 
     val dampingFactor = 0.85
 
@@ -38,14 +39,14 @@ object Pagerank {
     var pagerank = sc.parallelize(1 to numVertices map ((_, 1.0/numVertices)))
 
     for(i <- 1 to maxIterations) {
-      pagerank = pagerank.join(adjacencyMatrix).flatMap {
+      pagerank = pagerank.join(adjacencyMatrix, dop).flatMap {
         case (node, (rank, neighboursIt)) => {
           val neighbours = neighboursIt.toSeq
           neighbours.map {
             (_, dampingFactor * rank / neighbours.length)
           } :+ (node, (1 - dampingFactor) / numVertices)
         }
-      }.reduceByKey(_ + _)
+      }.reduceByKey(_ + _, dop)
 
     }
 
