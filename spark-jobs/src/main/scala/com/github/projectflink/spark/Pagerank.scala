@@ -35,8 +35,8 @@ object Pagerank {
       val sp = line.split(" ")
       (sp(0).toInt, sp(1).toInt)
     }
-    val
-    // val adjacencyMatrix = inKV.groupByKey().cache()
+
+    val adjacencyMatrix = inKV.groupByKey().cache()
 
     var pagerank = sc.parallelize(1 to numVertices, dop) map ((_, 1.0/numVertices))
 
