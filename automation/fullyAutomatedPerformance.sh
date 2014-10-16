@@ -171,7 +171,7 @@ echo "Testing scaling capabilities from 5 to 25 machines."
 # 5 machines, 20GB mem each
 runExperiments 5 20000
 runExperiments 15 20000
-runExperiments 25 20000
+runExperiments 24 20000
 
 echo "Testing memory behavior"
 
@@ -181,7 +181,7 @@ runExperiments 5 15000
 
 # the 5 / 20000 datapoint is available.
 
-runExperiments 25 5000
+runExperiments 24 5000
 
 
 echo "Experiments done"

@@ -56,6 +56,9 @@ HADOOP_BIN="hadoop"
 FLINK_BUILD_HOME=$FILES_DIRECTORY"/flink-build"
 
 SPARK_HOME=$FILES_DIRECTORY"/spark"
+
+SPARK_MASTER=`hostname`":7077"
+
 # General Stuff
 DOP=1
 
