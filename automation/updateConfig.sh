@@ -5,6 +5,9 @@ echo "Updating configuration. Remember to restart"
 
 . ./configDefaults.sh
 
+echo "overwriting config.sh in bin/"
+cp flink-conf/config.sh $FILES_DIRECTORY/flink-build/bin/config.sh
+
 for file in flink-conf/* ; do
 	filename=$(basename "$file")
 	extension="${filename##*.}"

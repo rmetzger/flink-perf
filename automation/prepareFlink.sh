@@ -24,7 +24,7 @@ if [[ ! -e $FLINK_DIR ]]; then
 	git clone $GIT_REPO flink
 fi
 
-echo "Going into Flink dir, fetching and checking out."
+echo "Going into Flink dir, fetching and checking out $GIT_BRANCH."
 cd flink
 git remote set-url origin $GIT_REPO
 git fetch origin
@@ -41,7 +41,9 @@ done
 
 echo "building flink"
 #$MVN_BIN clean install -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN
-eval "$MVN_BIN clean install -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN"
+#eval "$MVN_BIN clean install -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN"
+echo "CUSTOM $CUSTOM_FLINK_MVN"
+eval "$MVN_BIN clean package -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN"
 cd $FILES_DIRECTORY
 
 if [[ $YARN == "true" ]]; then
