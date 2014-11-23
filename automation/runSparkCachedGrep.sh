@@ -4,9 +4,9 @@ echo "Running Spark wordcount example"
 
 . ./configDefaults.sh
 
-$SPARK_HOME/bin/spark-submit --master spark://$SPARK_MASTER \
+$SPARK_HOME/bin/spark-submit --master $SPARK_MASTER \
  --class com.github.projectflink.spark.GrepCaching \
- --driver-memory 8G \
+ $SPARK_YARN \
  `ls "$TESTJOB_HOME"/spark-jobs/target/spark-jobs-*-All.jar` \
- spark://$SPARK_MASTER hdfs:///user/robert/datasets/access-$1.log hdfs:///user/robert/playground/spark-grep-out lemon tree garden nonmatchinggrep keyboards
+  $SPARK_MASTER hdfs:///datasets/wordcount-2000 hdfs:///user/robert/playground/spark-multi-grep-out $*
 

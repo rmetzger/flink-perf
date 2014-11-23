@@ -34,7 +34,7 @@ echo "building spark"
 #$MVN_BIN clean install -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN
 #eval "sbt/sbt -Dhadoop.version=2.2.0 -Pyarn assembly"
 #SPARK_HADOOP_VERSION=2.2.0 SPARK_YARN=true sbt/sbt assembly
-MAVEN_OPTS="-Xmx10g -XX:MaxPermSize=256m" /share/hadoop/rmetzger/apache-maven-3.2.1/bin/mvn  clean install -DskipTests -Phadoop-2.4 -Pyarn
+MAVEN_OPTS="-Xmx10g -XX:MaxPermSize=256m" $MVN_BIN clean install -DskipTests -Phadoop-2.4 -Pyarn
 cd $FILES_DIRECTORY
 
 

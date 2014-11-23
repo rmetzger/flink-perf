@@ -43,7 +43,7 @@ echo "building flink"
 #$MVN_BIN clean install -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN
 #eval "$MVN_BIN clean install -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN"
 echo "CUSTOM $CUSTOM_FLINK_MVN"
-eval "$MVN_BIN clean package -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN"
+eval "$MVN_BIN clean install -DskipTests -Dmaven.javadoc.skip=true $CUSTOM_FLINK_MVN"
 cd $FILES_DIRECTORY
 
 if [[ $YARN == "true" ]]; then
