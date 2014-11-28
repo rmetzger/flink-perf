@@ -59,6 +59,8 @@ SPARK_HOME=$FILES_DIRECTORY"/spark"
 
 SPARK_MASTER=`hostname`":7077"
 
+SPARK_YARN="--driver-memory 43G --executor-memory 43G --num-executors 40 --executor-cores 8"
+
 # General Stuff
 DOP=1
 

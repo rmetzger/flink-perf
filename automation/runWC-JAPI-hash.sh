@@ -4,7 +4,7 @@ echo "Running wordcount example"
 
 . ./configDefaults.sh
 
-ARGS="$HDFS_WC $HDFS_WC_OUT"
+ARGS="$HDFS_WC $HDFS_WC_OUT-hash"
 echo "running wc with args $ARGS"
-$FLINK_BUILD_HOME"/bin/flink" run -p $DOP -c org.apache.flink.example.java.wordcount.WordCountHashAgg -j $FILES_DIRECTORY/flink/flink-examples/flink-java-examples/target/flink-java-examples-*SNAPSHOT.jar -a $ARGS
+$FLINK_BUILD_HOME"/bin/flink" run $TESTJOB_HOME"/flink-jobs/target/flink-jobs-*-SNAPSHOT.jar" -p $DOP -c com.github.projectflink.testPlan.WordCountHashAgg $ARGS
 
